@@ -1,0 +1,140 @@
+---
+title: "Data Mining Final Project"
+author: "Isaac and Begum"
+date: "4/8/2021"
+output: pdf_document
+---
+
+```{r}
+library(rtweet)
+df <- rtweet::search_tweets(n=100000,type='recent',q='anxiety OR anxious OR depressed OR depression OR suicide OR suicidal OR "kill myself" OR "want to die" OR stress OR stressed',retryonratelimit=TRUE,include_rts=FALSE)
+# write to file that preserves nested lists
+save_as_csv(df,"mentalhealth_tweetsdf.csv")
+```
+
+```{r}
+#### BY STATE
+library(geojsonio)
+library(rgeos)
+library(usdata)
+spdf <- geojson_read("~/Downloads/us_states_hexgrid.geojson.json",  what = "sp")
+total_pop_15 <- readr::read_csv("~/Downloads/total_pop_15.csv")
+
+# Bit of reformatting
+spdf@data = spdf@data %>%
+  mutate(google_name = gsub(" \\(United States\\)", "", google_name))
+
+# I need to 'fortify' the data to be able to show it with ggplot2 (we need a data frame format)
+spdf@data = spdf@data %>% mutate(google_name = gsub(" \\(United States\\)", "", google_name))
+spdf_fortified <- tidy(spdf, region = "google_name")
+
+# Calculate the centroid of each hexagon to add the label:
+centers <- cbind.data.frame(data.frame(gCentroid(spdf, byid=TRUE), id=spdf@data$iso3166_2))
+
+# Tweet data
+tweet_states_abbr <- data.frame("google_name"=character(),stringsAsFactors = FALSE)
+tweet_states_name <- data.frame("google_name"=character(),stringsAsFactors = FALSE)
+
+user_info <- df[!duplicated(df$screen_name),]
+nrow(user_info)
+
+user_info <- user_info[user_info$location!=""&!is.na(user_info$location),]
+user_info <- user_info %>% 
+  select(location) %>%
+  filter((grepl("dc|DC|d.c.|D.C.|District|district|D.C|DC.|d.c|dc.|capitol|Capitol|Washington Heights",user_info$location)==FALSE)) # Fixes DC categorization as Wash. State
+
+pattern_abbr <- paste("\\b(", paste(datasets::state.abb, collapse="|"), ")\\b", sep="")
+pattern_state <- paste("\\b(", paste(datasets::state.name, collapse="|"), ")\\b", sep="")
+
+for (i in 1:length(user_info$location)) {
+  if (grepl(pattern_abbr,user_info$location[i]) == TRUE) {
+    user_info$location[i] %>%
+      str_match(pattern_abbr) %>%
+      .[,2] %>%
+      as.data.frame() %>%
+      set_names("google_name") %>%
+      rbind(., tweet_states_abbr) -> tweet_states_abbr
+  }
+  if (grepl(pattern_state,user_info$location[i]) == TRUE & (grepl(pattern_abbr,user_info$location[i]) != TRUE)) {
+    user_info$location[i] %>%
+      str_match(pattern_state) %>%
+      .[,2] %>%
+      as.data.frame() %>%
+      set_names("google_name") %>%
+      rbind(., tweet_states_name) -> tweet_states_name
+  }
+}
+tweet_states_abbr <- tweet_states_abbr[!is.na(tweet_states_abbr$google_name)&tweet_states_abbr$google_name!="<NA>",,drop=F]
+tweet_states_name <- tweet_states_name[!is.na(tweet_states_name$google_name)&tweet_states_name$google_name!="<NA>",,drop=F]
+tweet_states_abbr$google_name <- abbr2state(tweet_states_abbr$google_name) 
+tweet_states <- rbind(tweet_states_abbr,tweet_states_name) %>%
+  as_tibble() %>%
+  count(google_name,sort=T)
+
+tweet_states <- tweet_states[order(match(tweet_states$google_name,spdf_fortified$id)),]
+
+spdf_fortified <- spdf_fortified %>%
+  inner_join(. , tweet_states, by=c("id"="google_name")) 
+total_pop_15 <- total_pop_15[order(match(total_pop_15$NAME,spdf_fortified$id)),]
+spdf_fortified <- spdf_fortified %>%
+  inner_join(. , total_pop_15,by=c("id"="NAME"))
+spdf_fortified$freq <- with(spdf_fortified,(n/total_pop_15))
+spdf_fortified$adj_pop_15 <- with(spdf_fortified,(total_pop_15/1000000))
+spdf_fortified$adj_n <- with(spdf_fortified,(n/adj_pop_15))
+
+# Now I can plot this shape easily as described before: (fill = n, fill = freq, pop. per 100,000 variable is adj_n)
+ggplot() +
+  geom_polygon(data = spdf_fortified, aes(fill = (adj_n), x = long, y = lat, group = group)) +
+  geom_text(data=centers, aes(x=x, y=y, label=id), color="white", size=3, alpha=0.6) +
+  scale_fill_distiller(palette="Reds",direction=0,guide = guide_legend( keyheight = unit(3, units = "mm"), keywidth=unit(12, units = "mm"), label.position = "bottom", title.position = 'top', nrow=1)) +
+  theme_void() +
+  coord_map() +
+  labs(title="Frequency of Mental Health Tweets",subtitle="(per million residents)",fill="Freq") +
+  theme(legend.direction="horizontal",legend.key.width = unit(1.0,'cm'),
+        legend.position = c(0.5, 0.9),
+        text = element_text(color = "#22211d"),
+        plot.background = element_rect(fill = "#f5f5f2", color = NA), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.title = element_blank(),
+        plot.title = element_text(size= 22, hjust=0.5, color = "#000000", margin = margin(b = -0.1, t = 0.4, l = 2, unit = "cm")),
+        plot.subtitle = element_text(size= 14, hjust=0.5, color = "#4e4d47", margin = margin(b = -0.1, t = 0.4, l = 2, unit = "cm")))
+
+ggsave("MentalHealthLocation.png")
+
+### BY ACTUAL LOCATION
+library(ggmap)
+library(tidyverse)
+library(leaflet) # Mapping
+library(readxl)
+
+# Eliminating locations set as NA, "earth" or "united states," which don't give good data...
+df_use <- df[!is.na(df$location),]
+df_use <- df[df$location!=""&df$location!="United States"&df$location!="USA"&df$location!="United States of America"
+         &df$location!="Planet Earth"&df$location!="Earth"&df$location!="earth"&df$location!="usa"
+         &df$location!="america"&df$location!="America"&df$location!="united states",]
+
+# Limiting to one tweet per user
+df_use <- df[!duplicated(df$screen_name),]
+
+# Google 
+google_df<- tibble(address = as.character(df$location)) %>%
+  mutate_geocode(address)
+
+google_df$address <- plain_tweets(google_df$address)
+
+# SAVE GOOGLE_DF!
+
+leaflet(cbind(google_df$lon,google_df$lat)) %>%
+  addTiles() %>%
+  addMarkers(clusterOptions = markerClusterOptions(),popup=google_df$address)
+
+leaflet(cbind(google_df$lon,google_df$lat)) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    col="darkred",fill=T,
+    stroke = FALSE, fillOpacity = 0.1,popup=google_df$address,radius=2)
+
+
+
+```
