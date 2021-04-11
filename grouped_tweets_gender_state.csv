@@ -1,0 +1,202 @@
+gender,state,n
+female,AK,8
+female,AL,62
+female,Alabama,33
+female,Alaska,11
+female,AR,27
+female,Arizona,70
+female,Arkansas,26
+female,AZ,116
+female,CA,872
+female,California,355
+female,CO,124
+female,Colorado,97
+female,Connecticut,45
+female,CT,69
+female,DE,9
+female,Delaware,11
+female,FL,300
+female,Florida,219
+female,GA,235
+female,Georgia,80
+female,Hawaii,11
+female,HI,11
+female,IA,38
+female,ID,27
+female,Idaho,15
+female,IL,298
+female,Illinois,74
+female,IN,80
+female,Indiana,63
+female,Iowa,39
+female,Kansas,36
+female,Kentucky,29
+female,KS,36
+female,KY,48
+female,LA,114
+female,Louisiana,27
+female,MA,204
+female,Maine,29
+female,Maryland,97
+female,Massachusetts,77
+female,MD,114
+female,ME,16
+female,MI,121
+female,Michigan,129
+female,Minnesota,67
+female,Mississippi,20
+female,Missouri,53
+female,MN,122
+female,MO,86
+female,Montana,9
+female,MS,17
+female,MT,9
+female,NC,185
+female,ND,26
+female,NE,34
+female,Nebraska,24
+female,Nevada,14
+female,New Hampshire,19
+female,New Jersey,112
+female,New Mexico,16
+female,New York,307
+female,NH,12
+female,NJ,149
+female,NM,18
+female,North Carolina,88
+female,North Dakota,8
+female,NV,99
+female,NY,611
+female,OH,187
+female,Ohio,146
+female,OK,41
+female,Oklahoma,34
+female,OR,93
+female,Oregon,66
+female,PA,252
+female,Pennsylvania,75
+female,Rhode Island,17
+female,RI,27
+female,SC,65
+female,SD,14
+female,South Carolina,33
+female,South Dakota,2
+female,Tennessee,38
+female,Texas,298
+female,TN,101
+female,TX,576
+female,UT,42
+female,Utah,37
+female,VA,129
+female,Vermont,8
+female,Virginia,91
+female,VT,8
+female,WA,168
+female,Washington,67
+female,West Virginia,12
+female,WI,79
+female,Wisconsin,51
+female,WV,20
+female,WY,3
+female,Wyoming,4
+male,AK,9
+male,AL,19
+male,Alabama,21
+male,Alaska,5
+male,AR,21
+male,Arizona,41
+male,Arkansas,16
+male,AZ,58
+male,CA,511
+male,California,174
+male,CO,84
+male,Colorado,54
+male,Connecticut,20
+male,CT,38
+male,DE,4
+male,Delaware,12
+male,FL,166
+male,Florida,114
+male,GA,123
+male,Georgia,41
+male,Hawaii,3
+male,HI,10
+male,IA,17
+male,ID,9
+male,Idaho,5
+male,IL,152
+male,Illinois,34
+male,IN,55
+male,Indiana,33
+male,Iowa,12
+male,Kansas,23
+male,Kentucky,13
+male,KS,13
+male,KY,25
+male,LA,67
+male,Louisiana,16
+male,MA,89
+male,Maine,21
+male,Maryland,36
+male,Massachusetts,39
+male,MD,62
+male,ME,11
+male,MI,81
+male,Michigan,53
+male,Minnesota,40
+male,Mississippi,6
+male,Missouri,19
+male,MN,69
+male,MO,49
+male,Montana,8
+male,MS,15
+male,MT,1
+male,NC,100
+male,ND,11
+male,NE,14
+male,Nebraska,14
+male,Nevada,11
+male,New Hampshire,10
+male,New Jersey,63
+male,New Mexico,8
+male,New York,155
+male,NH,12
+male,NJ,56
+male,NM,18
+male,North Carolina,43
+male,North Dakota,3
+male,NV,40
+male,NY,308
+male,OH,97
+male,Ohio,69
+male,OK,35
+male,Oklahoma,13
+male,OR,54
+male,Oregon,30
+male,PA,169
+male,Pennsylvania,49
+male,Rhode Island,5
+male,RI,11
+male,SC,36
+male,SD,3
+male,South Carolina,22
+male,South Dakota,6
+male,Tennessee,23
+male,Texas,147
+male,TN,73
+male,TX,305
+male,UT,30
+male,Utah,21
+male,VA,68
+male,Vermont,9
+male,Virginia,50
+male,VT,4
+male,WA,94
+male,Washington,42
+male,West Virginia,6
+male,WI,33
+male,Wisconsin,23
+male,WV,9
+male,WY,2
+male,Wyoming,2
+NA,Washington,1
