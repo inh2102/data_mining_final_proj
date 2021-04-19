@@ -1,0 +1,246 @@
+---
+title: "Data Mining Final Project"
+author: "Isaac and Begum"
+date: "4/8/2021"
+output: pdf_document
+---
+
+```{r}
+
+# data collection
+
+library(rtweet)
+# keywords
+df <- rtweet::search_tweets(n=100000,type='recent',q='anxiety OR anxious OR depressed OR lonely OR depression OR "feeling lonely" OR "feel lonely" OR "commit suicide" OR "committing suicide" OR suicidal OR suicide OR "kill myself" OR "my suicide note" OR "my suicide letter" OR "end my life" OR "never wake up" OR "not worth living" OR "ready to jump" OR "tired of living" OR "die alone" OR "go to sleep forever" ',retryonratelimit=TRUE,include_rts=FALSE)
+# random
+df2 <- search_tweets(q="-filter:verified OR filter:verified",n=100000,retryonratelimit=TRUE,
+                    type='recent',include_rts=FALSE)
+# combine
+rand <- read_csv("no_keywords.csv") %>%
+  select(-hashtags)
+mental <- read_csv("yes_keywords.csv")
+set.seed(123)
+mental <- sample_n(mental,5000)
+df <- rbind(rand,mental)
+set.seed(123)
+rows <- sample(nrow(df))
+df <- df[rows,]
+```
+
+```{r}
+# extract US states based on abbreviations and full state names in discretionary "location" field
+library(geojsonio)
+library(tidyverse)
+library(rgeos)
+library(usdata)
+library(broom)
+df <- read_csv("combined_sample.csv")
+spdf <- geojson_read("~/Downloads/us_states_hexgrid.geojson.json",  what = "sp")
+total_pop_15 <- readr::read_csv("~/Downloads/total_pop_15.csv")
+
+# Bit of reformatting
+spdf@data = spdf@data %>%
+  mutate(google_name = gsub(" \\(United States\\)", "", google_name))
+
+# I need to 'fortify' the data to be able to show it with ggplot2 (we need a data frame format)
+spdf@data = spdf@data %>% mutate(google_name = gsub(" \\(United States\\)", "", google_name))
+spdf_fortified <- tidy(spdf, region = "google_name")
+
+# Calculate the centroid of each hexagon to add the label:
+centers <- cbind.data.frame(data.frame(gCentroid(spdf, byid=TRUE), id=spdf@data$iso3166_2))
+
+# Tweet data
+tweet_states_abbr <- data.frame("google_name"=character(),stringsAsFactors = FALSE)
+tweet_states_name <- data.frame("google_name"=character(),stringsAsFactors = FALSE)
+
+user_info <- df[!duplicated(df$screen_name),]
+nrow(user_info)
+
+user_info <- user_info[user_info$location!=""&!is.na(user_info$location),]
+user_info <- user_info %>% 
+  select(location) %>%
+  filter((grepl("dc|DC|d.c.|D.C.|District|district|D.C|DC.|d.c|dc.|capitol|Capitol|Washington Heights",user_info$location)==FALSE)) # Fixes DC categorization as Wash. State
+
+pattern_abbr <- paste("\\b(", paste(datasets::state.abb, collapse="|"), ")\\b", sep="")
+pattern_state <- paste("\\b(", paste(datasets::state.name, collapse="|"), ")\\b", sep="")
+
+# get state column
+
+mental$state <- rep(NA,nrow(mental))
+for (i in 1:length(mental$location)) {
+  if (grepl(pattern_abbr,mental$location[i]) == TRUE) {
+    mental$location[i] %>%
+      str_match(pattern_abbr) %>%
+      .[,2] %>% abbr2state(.) -> mental$state[i]
+  }
+  if (grepl(pattern_state,mental$location[i]) == TRUE & (grepl(pattern_abbr,mental$location[i]) != TRUE)) {
+    mental$location[i] %>%
+      str_match(pattern_state) %>%
+      .[,2] -> mental$state[i]
+  }
+}
+```
+
+```{r}
+# creating an actual map?
+tweet_states_abbr <- tweet_states_abbr[!is.na(tweet_states_abbr$google_name)&tweet_states_abbr$google_name!="<NA>",,drop=F]
+tweet_states_name <- tweet_states_name[!is.na(tweet_states_name$google_name)&tweet_states_name$google_name!="<NA>",,drop=F]
+tweet_states_abbr$google_name <- abbr2state(tweet_states_abbr$google_name) 
+tweet_states <- rbind(tweet_states_abbr,tweet_states_name) %>%
+  as_tibble() %>%
+  count(google_name,sort=T)    
+
+for (i in 1:length(user_info$location)) {
+  if (grepl(pattern_abbr,user_info$location[i]) == TRUE) {
+    user_info$location[i] %>%
+      str_match(pattern_abbr) %>%
+      .[,2] %>%
+      as.data.frame() %>%
+      set_names("google_name") %>%
+      rbind(., tweet_states_abbr) -> tweet_states_abbr
+  }
+  if (grepl(pattern_state,user_info$location[i]) == TRUE & (grepl(pattern_abbr,user_info$location[i]) != TRUE)) {
+    user_info$location[i] %>%
+      str_match(pattern_state) %>%
+      .[,2] %>%
+      as.data.frame() %>%
+      set_names("google_name") %>%
+      rbind(., tweet_states_name) -> tweet_states_name
+  }
+}
+tweet_states_abbr <- tweet_states_abbr[!is.na(tweet_states_abbr$google_name)&tweet_states_abbr$google_name!="<NA>",,drop=F]
+tweet_states_name <- tweet_states_name[!is.na(tweet_states_name$google_name)&tweet_states_name$google_name!="<NA>",,drop=F]
+tweet_states_abbr$google_name <- abbr2state(tweet_states_abbr$google_name) 
+tweet_states <- rbind(tweet_states_abbr,tweet_states_name) %>%
+  as_tibble() %>%
+  count(google_name,sort=T)
+
+tweet_states <- tweet_states[order(match(tweet_states$google_name,spdf_fortified$id)),]
+
+spdf_fortified <- spdf_fortified %>%
+  inner_join(. , tweet_states, by=c("id"="google_name")) 
+total_pop_15 <- total_pop_15[order(match(total_pop_15$NAME,spdf_fortified$id)),]
+spdf_fortified <- spdf_fortified %>%
+  inner_join(. , total_pop_15,by=c("id"="NAME"))
+spdf_fortified$freq <- with(spdf_fortified,(n/total_pop_15))
+spdf_fortified$adj_pop_15 <- with(spdf_fortified,(total_pop_15/1000000))
+spdf_fortified$adj_n <- with(spdf_fortified,(n/adj_pop_15))
+
+# Now I can plot this shape easily as described before: (fill = n, fill = freq, pop. per 100,000 variable is adj_n)
+ggplot() +
+  geom_polygon(data = spdf_fortified, aes(fill = (adj_n), x = long, y = lat, group = group)) +
+  geom_text(data=centers, aes(x=x, y=y, label=id), color="white", size=3, alpha=0.6) +
+  scale_fill_distiller(palette="Reds",direction=0,guide = guide_legend( keyheight = unit(3, units = "mm"), keywidth=unit(12, units = "mm"), label.position = "bottom", title.position = 'top', nrow=1)) +
+  theme_void() +
+  coord_map() +
+  labs(title="Frequency of Mental Health Tweets",subtitle="(per million residents)",fill="Freq") +
+  theme(legend.direction="horizontal",legend.key.width = unit(1.0,'cm'),
+        legend.position = c(0.5, 0.9),
+        text = element_text(color = "#22211d"),
+        plot.background = element_rect(fill = "#f5f5f2", color = NA), 
+        panel.background = element_rect(fill = "#f5f5f2", color = NA), 
+        legend.background = element_rect(fill = "#f5f5f2", color = NA),
+        legend.title = element_blank(),
+        plot.title = element_text(size= 22, hjust=0.5, color = "#000000", margin = margin(b = -0.1, t = 0.4, l = 2, unit = "cm")),
+        plot.subtitle = element_text(size= 14, hjust=0.5, color = "#4e4d47", margin = margin(b = -0.1, t = 0.4, l = 2, unit = "cm")))
+ggsave("MentalHealthLocation.png")
+```
+
+```{r}
+genders <- read_csv("combined_sample_genders.csv") %>%
+  select(-X1) %>% unlist() %>% as.vector()
+df$gender <- genders
+
+ggplot(df[df$followers_count<2500,],aes(x=followers_count)) + geom_histogram(bins=100)
+quantile(df$followers_count) # top 95%
+
+depressed <- read_csv("depressed_preds.csv") %>%
+  .[,2] %>%
+  rename(depressed=`0`)
+df <- bind_cols(df,depressed)
+
+ggplot(df[!is.na(df$gender),],aes(x=gender,fill=gender)) + 
+  geom_histogram(stat='count') + 
+  labs(title="Gender of Combined Mental Health and Random Tweets")
+
+states <- (df %>% group_by(state) %>% count() %>% arrange(-n))$state[1:10]
+
+ggplot(df[!is.na(df$state),] %>% filter(state %in% states),
+       aes(x=forcats::fct_infreq(state),fill=state)) + 
+  geom_histogram(stat='count') + 
+  labs(title="Residency of Combined Mental Health and Random Tweets",
+       x="state") + 
+  theme(axis.text.x.bottom = element_blank(),legend.title = element_blank(),
+        axis.ticks.x = element_blank()) + 
+  scale_colour_hue(name = "",
+    breaks=forcats::fct_infreq(df$state),
+    labels=forcats::fct_infreq(df$state))
+
+library(scales)
+ggplot(df,aes(x=created_at)) + 
+  geom_histogram() + 
+  scale_x_datetime(date_breaks='6 hour',date_labels='%m-%d-%y %H:%M') + 
+  labs(title="Time Period of Twitter Rest API Collection",x="time") + 
+  theme(plot.title=element_text(hjust=0.5))
+```
+
+```{r}
+# drop useless Twitter API columns, group data according to state and gender
+df <- df %>% select(user_id,created_at,screen_name,name,text,lang,description,followers_count,gender,state,depressed,keyword)
+table(df$keyword,df$depressed)
+grouped_df_gender <- df %>%
+  group_by(gender) %>%
+  count() %>%
+  arrange(gender)
+grouped_df_state <- df %>%
+  group_by(state) %>%
+  count() %>%
+  arrange(state) %>%
+  ungroup()
+```
+
+```{r}
+# men vs women words; find words prevalent among men and not women, and vice versa
+men <- df[df$gender=="male"&df$depressed==1,] %>% na.omit()
+women <- df[df$gender=="female"&df$depressed==1,] %>% na.omit
+library(tidytext)
+men_words <- men %>% 
+  select(text, created_at) %>%
+  unnest_tokens(word, text, token="tweets") %>% 
+  anti_join(stop_words, by = "word") %>%
+  count(word,sort=T) #%>%
+  #head(100)
+women_words <- women %>% 
+  select(text, created_at) %>%
+  unnest_tokens(word, text, token="tweets") %>%
+  anti_join(stop_words, by = "word") %>%
+  count(word,sort=T) %>%
+  head(100)
+men_words[(!(men_words$word %in% women_words$word)),]
+library(reshape2)
+male_val <- c(32,30,20)
+female_val <- c(28,20,6)
+word <- c("stress","gun","children")
+combined <- data.frame(word,male_val,female_val)
+combined <- melt(combined,id.vars='word')
+
+ggplot(combined) + 
+  geom_col(aes(x=word,y=value,fill=variable),position='dodge') +
+  labs(fill="gender",title="Male-Dominant Words in Depressed/Anxious Tweets",y="count") +
+  scale_fill_manual(labels = c("male", "female"), values = c("#00BFC4", "#F8766D"))
+        
+women_words[(!(women_words$word %in% men_words$word)),]
+library(reshape2)
+male_val <- c(20,19,19)
+female_val <- c(43,33,30)
+word <- c("tired","fear","job")
+combined <- data.frame(word,male_val,female_val)
+combined <- melt(combined,id.vars='word')
+ggplot(combined) + 
+  geom_col(aes(x=word,y=value,fill=variable),position='dodge') +
+  labs(fill="gender",title="Female-Dominant Words in Depressed/Anxious Tweets",y="count") +
+  scale_fill_manual(labels = c("male", "female"), values = c("#00BFC4", "#F8766D"))
+ft_imp <- read_csv("feature_importance.csv")
+interest = c('anxiety', 'depression','bipolar','horrible','time','meds','struggle','feel','help','disorder','feeling','think','panic','severe')
+ft_imp <- ft_imp[ft_imp$Feature %in% interest,]
+```
