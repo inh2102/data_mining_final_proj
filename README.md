@@ -1,1 +1,1 @@
-# data_mining_final_proj
+# Final Project, Applied Data Mining
