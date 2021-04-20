@@ -15,7 +15,7 @@ To replicate our paper, obtain the following datasets online:
  
  
 and refer to the files below: 
-- add_gender_to_mentalhealth.ipynb for the code to predict the gender of the users based on their usernames
+- add_gender_to_mentalhealth.ipynb for the code to predict the gender of the users based on their screen names (NOT usernames/handles)
 - analyze.py for the code to aggregate the mean of CDC scores of anxiety or depression averaged over 27 weeks by state and by gender
 - tf_idf_randomforest_mod.py for the code to train a random forest model using tf-idf for depressive/anxious classification of tweets
 - prepare_final_tweet_dfs.py to calculate the number and the ratio of depressed/anxious tweets 
