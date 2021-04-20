@@ -1,8 +1,8 @@
 ## Final Project, Applied Data Mining
 
-# Summary / Abstract:
+# Summary:
 
-> Due to our concerns about mental health in light of the COVID-19 pandemic, we seek to study the manifestation of expressing specific ideations on social media. In this project, we track the frequency of tweets demonstrating depression or anxiety with specific regard to tweeters’ gender, U.S. state of residency, and word usage. To properly classify depressed or anxious tweets, we primarily use a corpus of Facebook comments labeled as such by NIH researchers to train a Random Forest model using tf-idf for classification. We use this classification model to predict whether or not our sample’s 10,000 collected tweets are depressed/anxious (or not); and we study the relationship between this label, gender, and U.S. state. Finally, we use CDC data on self-reported levels of anxiety and depression by state and gender to mine our data, observe whether reported anxiety or depression maps onto tweeted anxiety or depression by gender and states, and identify outlier values with large differences between CDC and Twitter data sources. We find that females and males display the opposite behaviors and sentiments online as compared to what one would expect from reported anxiety or depression levels. We do not see a relationship as strong and distinct within states; we cannot say with confidence that the reported anxiety or depression was reflected in sentiment from the tweets within those states. More research is needed to explore such a relationship, and in the future, we would approach the problem using newer natural language processing techniques or domain-specific psycholinguistic methods, using the one with highest accuracy. >
+In this project, we track the frequency of tweets demonstrating depression or anxiety with specific regard to tweeters’ gender, U.S. state of residency, and word usage. We used  Facebook comments labeled as depressed or anxious to train a Random Forest model using tf-idf for classification and used that model to predict whether or not our sample’s collected tweets are depressed/anxious (or not). We use CDC data on self-reported levels of anxiety and depression by state and gender to mine our data, observe whether reported anxiety or depression maps onto tweeted anxiety or depression by gender and states, and identify outlier values with large differences between CDC and Twitter data sources. We find that females and males display the opposite behaviors and sentiments online as compared to what one would expect from reported anxiety or depression levels. We do not see a relationship as strong and distinct within states; we cannot say with confidence that the reported anxiety or depression was reflected in sentiment from the tweets within those states.
 
 # Implementation / Replication:
 
@@ -11,6 +11,8 @@ To replicate our paper, obtain the following datasets online:
 - Recent tweets from the Twitter's REST API: include location, tweet body, username, and (optional) user bio
 - [Depression-labeled Facebook comments dataset](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6111060/)
 - Anxiety and depression scores for genders and for states from the CDC Household Pulse Survey  
+
+
 
     and refer to the files below: 
 - add_gender_to_mentalhealth.ipynb for the code to predict the gender of the users based on their usernames
