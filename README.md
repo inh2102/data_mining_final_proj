@@ -6,8 +6,17 @@
 
 # Implementation / Replication:
 
-To replicate our paper, refer to the following files:
+To replicate our paper, obtain the following datasets online:
+ 
+- Recent tweets from the Twitter API: include location, tweet body, username, and user bio
+- Depression-labeled Facebook comments dataset
+- Anxiety and depression scores for genders and for states from the CDC Household Pulse Survey  
 
-- plot_tweet_and_cdc_scores.R for plots of CDC anxiety/depression scores and of ratio of depressed/anxious tweets
-- y for y
-- z for z
+    and refer to the files below: 
+- add_gender_to_mentalhealth.ipynb for the code to predict the gender of the users based on their usernames
+- analyze.py for the code to aggregate the mean of CDC scores of anxiety or depression averaged over 27 weeks by state and by gender
+- tf_idf_randomforest_mod.py for the code to train a random forest model using tf-idf for depressive/anxious classification of tweets
+- prepare_final_tweet_dfs.py to calculate the number and the ratio of depressed/anxious tweets 
+- get_results.py to calculate the correlation between the CDC anxiety/depression scores and the ratio of depressed/anxious tweets
+- plot_tweet_and_cdc_scores.R for plots the relationship mentioned above
+- generate_visualize_data.Rmd for plots and maps further exploring the relationship 
