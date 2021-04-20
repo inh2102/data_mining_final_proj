@@ -7,8 +7,8 @@
 
 # Implementation / Replication:
 
-To replicate our code, refer to the following files:
+To replicate our paper, refer to the following files:
 
-- x for x
+- plot_tweet_and_cdc_scores.R for plots of CDC anxiety/depression scores and of ratio of depressed/anxious tweets
 - y for y
 - z for z
