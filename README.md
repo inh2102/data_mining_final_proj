@@ -8,8 +8,8 @@
 
 To replicate our paper, obtain the following datasets online:
  
-- Recent tweets from the Twitter API: include location, tweet body, username, and user bio
-- Depression-labeled Facebook comments dataset
+- Recent tweets from the Twitter's REST API: include location, tweet body, username, and (optional) user bio
+- [Depression-labeled Facebook comments dataset](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6111060/)
 - Anxiety and depression scores for genders and for states from the CDC Household Pulse Survey  
 
     and refer to the files below: 
